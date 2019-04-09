@@ -30,31 +30,63 @@ glimpse(climas)
 
 
 ### Quais os meses mais quentes e mais frios? 
+
+O gráfico exibe a relação entre mês e temperatura média, a linha vermelha descreve a temperatura média considerando todos os meses. É possível perceber que os meses mais quentes estão no periodo de verão, de dezembro à março, e os mais frios no período de inverno, de junho à agosto.
+
+
 ```{r}
 climas %>% 
     group_by(mes) %>%
     summarise(tmes = mean(tmedia)) %>% 
     ggplot(aes(x = factor(mes), y = tmes, group=1)) +
-    geom_line(size = 1, color="steelblue")+
-    geom_point(size = 0.2, color="steelblue")+
-    geom_hline(size=0.3, col="red", aes(yintercept=mean(climas$tmedia))) + 
-    xlab("Mês") + ylab("Temperatura ºC")
+    geom_line(size = 1, color="orange")+
+    geom_point(size = 0.2, color="orange")+
+    geom_hline(size=0.3, col="green", aes(yintercept=mean(climas$tmedia))) + 
+    xlab("Mês") + ylab("Temperatura ºC") +
+    ggtitle("Temperatura média por mês")
 ```
-
 
 ### Qual foi o São João  mais frio de CG que está nos nossos dados?
 
+O gráfico de pontos exibe os 10 anos que tiveram o são joão mais frio em campina grande. Para estimar o são joão mais frio de cada ano usamos a média das temperaturas registradas para o mês de junho. Os anos onde o são joão foram mais frios são 2004, 2008 e 2005.
+
 ```{r}
 climas %>% 
+    filter(cidade == "Campina Grande") %>%
     filter(mes == 6) %>%
     group_by(ano) %>%
     summarise(tmes = mean(tmedia)) %>% 
-    top_n(n = -5, wt = tmes) %>%
+    top_n(n = -10, wt = tmes) %>%
     ggplot(aes(x = factor(ano), y = tmes), group=1) +
     geom_point(size=4, color="steelblue") +
-    xlab("Ano") + ylab("Temperatura ºC")
+    xlab("Ano") + ylab("Temperatura ºC") +
+    ggtitle("Top 10 SJ mais frios")
 ```
 
+Outro fato interessante é que os são joões mais frios 2004, 2008 e 2005 também aparecem no top 7 dos mais chuvosos.
+
+```{r}
+climas %>% 
+    filter(cidade == "Campina Grande") %>%
+    filter(mes == 6) %>%
+    group_by(ano) %>%
+    summarise(tmes = mean(chuva)) %>% 
+    top_n(n = 10, wt = tmes) %>%
+    ggplot(aes(x = factor(ano), y = tmes)) +
+    geom_bar(stat = "identity", fill="steelblue") +
+    xlab("Ano") + ylab("Chuva") +
+    ggtitle("Top 10 SJ mais chuvosos")
+```
+
+Ao estimar a correlação entre temperatura média e chuva para os meses de são joão o resultado é significante. A correlação é negativa isso significa que são joões mais frios também são mais chuvosos.
+
+```{r}
+sj <- climas %>% 
+        filter(cidade == "Campina Grande") %>%
+        filter(mes == 6)
+
+cor(sj$tmedia, sj$chuva)
+```
 
 ## Chuva
 
@@ -64,13 +96,32 @@ Como é a distribuição do volume de chuvas por semana em JP e CG? A chuva vari
 
 ### No geral, onde chove mais?
 
+O gráfico exibe a distribuição das chuvas para as cidades de João Pessoa e Campina Grande. Em João Pessoa chove mais, já que a distribuição da cidade de Campina Grande se concentra mais proximo a zero do que a de João Pessoa. 
+
 ```{r}
 climas %>% 
-    ggplot(aes(x = tmax, fill = cidade)) + 
-    geom_density(alpha = .4)
+    ggplot(aes(x = chuva, fill = cidade)) + 
+    geom_density(alpha = .4) +
+    ggtitle("Distribuição das chuvas por cidade")
 ```
 
 ### A distribuição é diferente em meses específicos? 
+
+O gráfico exibe a distribuição das chuvas para cada estação. É possivel perceber que chove mais durante o inverno e outono, a primavera é o periodo onde chove menos.
+
+```{r}
+climas %>%
+    mutate(estacao = case_when(mes >= 4 & mes <= 6 ~ "Outono", 
+                               mes >= 7 & mes <= 9 ~ "Inverno",
+                               mes >= 10 & mes <= 12 ~ "Primavera",
+                               mes >= 1 & mes <= 3 ~ "Verão")) %>% 
+    ggplot(aes(x = chuva, fill = estacao)) + 
+    geom_density(alpha = .4) +
+    ggtitle("Distribuição das chuvas por estação")
+```
+
+Plotanto a chuva média para cada mês fica mais fácil perceber a relação evidenciada pelo gráfico anterior. A linha azul representa a média da chuva considerando todos os meses.
+
 ```{r}
 climas %>% 
     group_by(mes) %>%
@@ -78,6 +129,7 @@ climas %>%
     ggplot(aes(x = factor(mes), y = cmes, group=1)) +
     geom_area(size = 1, fill="steelblue", alpha = 0.5)+
     geom_hline(size=0.3, col="darkblue", aes(yintercept=mean(climas$chuva))) + 
-    xlab("Mês") + ylab("Chuva")
+    xlab("Mês") + ylab("Chuva") +
+    ggtitle("Média das chuvas por mês")
 ```
 
